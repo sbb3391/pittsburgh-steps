@@ -1,3 +1,5 @@
+import './wdyr'; 
+
 import React, {useState, useEffect, useRef} from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from "leaflet"
@@ -26,9 +28,13 @@ function App() {
   const position = [40.447940, -79.975181]
 
   return (
-    <MyMap>
+    <div className="w-full">
+      <h1 className="text-5xl text-center">My Map</h1>
+      <div className="w-full flex">
+        <MyMap />
+      </div>
 
-    </MyMap>
+    </div>
   //   <MapContainer center={position} zoom={12} minZoom={12} scrollWheelZoom={true} inertia={true} wheelDebounceTime={20}>
   //   <TileLayer
   //     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
