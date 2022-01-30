@@ -5,8 +5,31 @@ export default function Login(props) {
   const [email, updateEmail] = useState("")
   const [password, updatePassword] = useState("")
 
-  const sendLoginRequest = () => {
+  const handleLoginRequest = (event) => {
+    event.preventDefault()
 
+    fetch(`http://localhost:3000/users/login`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer",
+        "Content-type": "application/json",
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user: {
+          email: email,
+          password: password
+        }
+      })
+    })
+    .then( resp => resp.json())
+    .then( json => {
+      if (json.token) {
+        window.localStorage.stepsToken = json.token
+        window.localStorage.user = json.user
+        props.changeScreen("myMap")
+      }
+    })
   }
 
   const updateState = (event, func) => {
@@ -14,7 +37,7 @@ export default function Login(props) {
   }
 
   return(
-    <div className="flex w-full h-5/6">
+    <div className="flex w-full h-full">
       <div className="flex flex-col w-1/2 h-1/2 mx-auto place-self-center ">
         <div className="my-auto">
           <div className="flex flex-col px-8 space-y-2 py-4">
@@ -27,12 +50,12 @@ export default function Login(props) {
           </div>
           <div className="flex justify-center pt-3">
             <div>
-              <button className="border border-black rounded-xl w-24 h-12 bg-blue-700 text-white font-bold text-2xl">Login</button>
+              <button onClick={handleLoginRequest} className="border border-black rounded-xl w-24 h-12 bg-blue-700 text-white font-bold text-2xl">Login</button>
             </div>
           </div>
-        </div>
-        <div className="flex justify-center pt-3">
-          <span onClick={() => props.changeScreen("newUser")} className="cursor-pointer hover:underline hover:text-blue-700">I need to create a login.</span>
+          <div className="flex justify-center pt-4">
+            <span onClick={() => props.changeScreen("newUser")}className="cursor-pointer hover:underline hover:text-blue-700">I need to create a login.</span>
+          </div>
         </div>
       </div>
 

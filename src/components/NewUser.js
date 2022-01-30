@@ -13,7 +13,7 @@ export default function NewUser(props) {
   }
 
   return(
-    <div className="flex w-full h-5/6">
+    <div className="flex w-full h-full">
       <div className="flex flex-col w-1/2 h-3/4 mx-auto place-self-center ">
         <div className="my-auto">
           <div className="flex flex-col px-8 space-y-2 py-4">

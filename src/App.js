@@ -12,9 +12,10 @@ import NewUser from './components/NewUser.js'
 function App() {
 
   const [screen, changeScreen] = useState()
+  
  
   useEffect( () => {
-    if (window.localStorage.user) {
+    if (window.localStorage.stepsToken) {
       changeScreen("myMap")
     } else {
       changeScreen("login")
@@ -27,7 +28,13 @@ function App() {
       case "login":
         return <Login changeScreen={changeScreen} />
       case "myMap":
-        return <MyMap />
+        return(
+          <>
+            <Navbar changeScreen={changeScreen}/>
+            <MyMap />
+          </>
+        ); 
+
       case "newUser":
         return <NewUser changeScreen={changeScreen} />
     }
@@ -35,7 +42,6 @@ function App() {
 
   return (
     <div className="w-full h-screen">
-      <Navbar />
       {determineScreen()}
     </div>
   );

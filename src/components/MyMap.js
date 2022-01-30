@@ -15,8 +15,11 @@ import NeighborhoodLayer from './NeighborhoodLayer'
 
 const MyMap = () => {
 
+  // runs only once when the page loads
+  
+  
   const neighborhoodHash = {}
-
+  
   neighborhoodz.features.forEach( f => {
     neighborhoodHash[`${f.properties.hood}`] = {
       show: true,
@@ -24,12 +27,23 @@ const MyMap = () => {
       highlighted: false,
       preview: false
     }
-  })
 
+    // const steps = f.steps.map( f => {
+      //   return {
+    //     id: f.id,
+    //     material: f.properties.material,
+    //     name: f.properties.name,
+    //     number_of_steps: f.properties.number_of_steps,
+    //     condition: "",
+    //     show: true
+    //   }
+    // })
+
+    // neighborhoodHash[`${f.properties.hood}`].steps = steps
+  })
   const [neighborhoodzData, updateNeighborhoodzData] = useState(neighborhoodz)
   const [neighborhoodData, updateNeighborhoodData] = useState(neighborhoodHash);
-  const [dummy, updateDummyState] = useState(0);
-
+  
   const showAllSteps = (e) => {
     e.preventDefault()
 
@@ -54,9 +68,6 @@ const MyMap = () => {
     updateNeighborhoodData(newNeighborhoodData)
   }
 
-  const mouseOver = (e) => {
-  }
- 
   const renderSteps = () => {
     return Object.keys(neighborhoodData).map( (k, index) => {
 
@@ -144,8 +155,8 @@ const MyMap = () => {
   }
 
   return (
-    <div className="w-full h-5/6 flex">
-      <div className="flex-auto w-3/4">
+    <div className="w-full h-[88%] flex">
+      <div className="flex-auto w-5/6">
         <MapContainer style={{height: "100%", width: "100%"}} center={[40.446016, -79.959762]} zoom={12}>
           <TileLayer
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -157,7 +168,7 @@ const MyMap = () => {
           </LayersControl>
         </MapContainer>
       </div>
-      <div className="w-1/4 border border-black flex flex-col py-3 space-y-3">
+      <div className="w-1/6 border border-black flex flex-col py-3 space-y-3">
         <div>
           <button className="px-4" onClick={showAllSteps}>Show All</button>
           <button onClick={hideAllSteps}>Hide All</button>
