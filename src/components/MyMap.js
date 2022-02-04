@@ -14,35 +14,66 @@ import { Typography, Divider } from '@material-ui/core'
 import NeighborhoodLayer from './NeighborhoodLayer'
 
 const MyMap = () => {
-
-  // runs only once when the page loads
   
-  
-  const neighborhoodHash = {}
-  
-  neighborhoodz.features.forEach( f => {
-    neighborhoodHash[`${f.properties.hood}`] = {
-      show: true,
-      hood_no: f.properties.hood_no,
-      highlighted: false,
-      preview: false
-    }
-
-    // const steps = f.steps.map( f => {
-      //   return {
-    //     id: f.id,
-    //     material: f.properties.material,
-    //     name: f.properties.name,
-    //     number_of_steps: f.properties.number_of_steps,
-    //     condition: "",
-    //     show: true
-    //   }
-    // })
-
-    // neighborhoodHash[`${f.properties.hood}`].steps = steps
-  })
   const [neighborhoodzData, updateNeighborhoodzData] = useState(neighborhoodz)
-  const [neighborhoodData, updateNeighborhoodData] = useState(neighborhoodHash);
+  const [neighborhoodData, updateNeighborhoodData] = useState({});
+  const [visitedCheckbox, updateVisitedCheckbox] = useState(true)
+  const [notVisitedCheckbox, updateNotVisitedCheckbox] = useState(true)
+  
+  // runs only once when the page loads. Loads all neighborhood data to state
+  useEffect( () => {
+    const neighborhoodHash = {}
+  
+    neighborhoodz.features.forEach( f => {
+      neighborhoodHash[`${f.properties.hood}`] = {
+        show: true,
+        hood_no: f.properties.hood_no,
+        highlighted: false,
+        preview: false
+      }
+      const steps = f.steps.map( f => {
+          return {
+          id: f.id,
+          userStep: false,
+          material: f.properties.material,
+          name: f.properties.name,
+          number_of_steps: f.properties.number_of_steps,
+          condition: "",
+          show: true
+        }
+      })
+
+      neighborhoodHash[`${f.properties.hood}`].steps = steps
+    })
+
+    fetchUserSteps()
+    .then( resp => resp.json())
+    .then( json => {
+
+      Object.keys(neighborhoodHash).forEach( key => {
+        neighborhoodHash[key].steps.forEach( step => {
+          const userStep = json.steps.find( s => step.id === s.id )
+
+          if (userStep) {
+            step.userStep = true
+          }
+        })
+      })
+
+      updateNeighborhoodData(neighborhoodHash);
+
+    })
+  }, [])
+
+  // Runs once when the page loads. Fetches all user data for steps.
+  const fetchUserSteps = () => {
+    const userId = JSON.parse(window.localStorage.user).id
+    return fetch(`http://localhost:3000/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${window.localStorage.stepsToken}`
+      }
+    })
+  }
   
   const showAllSteps = (e) => {
     e.preventDefault()
@@ -51,9 +82,15 @@ const MyMap = () => {
 
     Object.keys(newNeighborhoodData).forEach( key => {
       newNeighborhoodData[key].show = true
+
+      newNeighborhoodData[key].steps.forEach( step => {
+        step.show = true
+      })
     })
 
     updateNeighborhoodData(newNeighborhoodData)
+    updateVisitedCheckbox(true)
+    updateNotVisitedCheckbox(true)
   }
 
   const hideAllSteps = (e) => {
@@ -65,6 +102,8 @@ const MyMap = () => {
       newNeighborhoodData[key].show = false
     })
 
+    updateVisitedCheckbox(true)
+    updateNotVisitedCheckbox(true)
     updateNeighborhoodData(newNeighborhoodData)
   }
 
@@ -80,19 +119,15 @@ const MyMap = () => {
         return neighborhood.highlighted ? .4 : .05
       }
 
-      const neighborhoodStyle = {
-        color: "blue",
-        fillOpacity: setFillOpacity(neighborhoodData[k]),
-        weight: 3
-      }
-    
+      const steps = neighborhoodData[k].steps
+
       return(
-        <NeighborhoodLayer key={neighborhood.properties.hood_no} neighborhoodKey={k} neighborhood={neighborhood} neighborhoodData={neighborhoodData}/>
+        <NeighborhoodLayer key={neighborhood.properties.hood_no} steps={steps} neighborhoodKey={k} neighborhood={neighborhood} neighborhoodData={neighborhoodData}/>
       ) 
     })
   }
 
-  const toggleNeighborhoodCheckBox = (neighborhood) => {
+  const toggleNeighborhoodCheckBox = (event, neighborhood) => {
     neighborhoodzData.features.forEach( (n, index) => {
       if (n.properties.hood === neighborhood.properties.hood) {
         const hood = neighborhoodData[n.properties.hood]
@@ -100,11 +135,17 @@ const MyMap = () => {
         const updatedHood = hood
         updatedHood.show = !updatedHood.show
         
+        if (updatedHood.preview) {
+          updatedHood.preview = false;
+        } 
+          
         const newNeighborhoodData = Object.assign({}, neighborhoodData)
 
         newNeighborhoodData[`${n.properties.hood}`] = hood
         
         updateNeighborhoodData(newNeighborhoodData)
+
+        removeNeighborhoodHighlight(event)
       }
     })
   }
@@ -143,7 +184,7 @@ const MyMap = () => {
         <div data-neighborhood-key={key} onMouseEnter={highlightNeighborhood} onMouseLeave={removeNeighborhoodHighlight} >
           <input 
             data-index={index} type="checkbox" checked={checked} 
-            onChange={() => toggleNeighborhoodCheckBox(neighborhood)} 
+            onChange={(event) => toggleNeighborhoodCheckBox(event, neighborhood)} 
             data-neighborhood-key={key} onMouseEnter={highlightNeighborhood} onMouseLeave={removeNeighborhoodHighlight}
           />
           <label
@@ -154,33 +195,92 @@ const MyMap = () => {
     })
   }
 
-  return (
-    <div className="w-full h-[88%] flex">
-      <div className="flex-auto w-5/6">
-        <MapContainer style={{height: "100%", width: "100%"}} center={[40.446016, -79.959762]} zoom={12}>
-          <TileLayer
-            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <LayersControl collapsed>
-            {renderSteps()}
+  const toggleVisitedCheckbox = () => {
+    const bool = visitedCheckbox
 
-          </LayersControl>
-        </MapContainer>
-      </div>
-      <div className="w-1/6 border border-black flex flex-col py-3 space-y-3">
-        <div>
-          <button className="px-4" onClick={showAllSteps}>Show All</button>
-          <button onClick={hideAllSteps}>Hide All</button>
+    const newNeighborhoodData = Object.assign({}, neighborhoodData)
+
+    Object.keys(newNeighborhoodData).forEach( key => {
+      newNeighborhoodData[key].steps.forEach( step => {
+        if (step.userStep) {
+          step.show = !bool
+        }
+      })
+    })
+
+    updateNeighborhoodData(newNeighborhoodData)
+    updateVisitedCheckbox(!bool)
+
+  }
+
+  const toggleNotVisitedCheckbox = () => {
+    const bool = notVisitedCheckbox
+
+    const newNeighborhoodData = Object.assign({}, neighborhoodData)
+
+    Object.keys(newNeighborhoodData).forEach( key => {
+      newNeighborhoodData[key].steps.forEach( step => {
+        if (!step.userStep) {
+          step.show = !bool
+        }
+      })
+    })
+
+    updateNeighborhoodData(newNeighborhoodData)
+    updateNotVisitedCheckbox(!bool)
+  }
+
+  if (Object.keys(neighborhoodData).length > 0) {
+    return (
+      <div className="w-full h-[88%] flex">
+        <div className="flex-auto w-5/6">
+          <MapContainer style={{height: "100%", width: "100%"}} center={[40.446016, -79.959762]} zoom={12}>
+            <TileLayer
+              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <LayersControl collapsed>
+              {renderSteps()}
+  
+            </LayersControl>
+          </MapContainer>
         </div>
-        <div className="h-80 w-full overflow-y-scroll">
-          <div >
-            {renderNeighborhoodList()}
+        <div className="w-1/6 border border-black flex flex-col py-3 space-y-6">
+          <div className="flex justify-around"> 
+            <button className="px-4" onClick={showAllSteps}>Show All</button>
+            <button onClick={hideAllSteps}>Hide All</button>
+          </div>
+          <div className="h-80 w-11/12 overflow-y-scroll mx-auto">
+            <div >
+              {renderNeighborhoodList()}
+            </div>
+          </div>
+          <div className="h-30 w-full flex justify-around">
+            <div>
+              <input 
+                type="checkbox" checked={visitedCheckbox}
+                onChange={() => toggleVisitedCheckbox()} 
+              />
+              <label
+              >Visited
+              </label>
+            </div>
+            <div>
+              <input 
+                type="checkbox" checked={notVisitedCheckbox}
+                onChange={() => toggleNotVisitedCheckbox()} 
+              />
+              <label
+              >Not Visited
+              </label>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  } else {
+    return <div></div>
+  }
 }
 
 // MyMap.whyDidYouRender = true;

@@ -23,7 +23,7 @@ export default React.memo(function NeighborhoodLayer(props) {
   const neighborhoodStyle = {
     color: setColor(props.neighborhoodData[props.neighborhoodKey]),
     fillOpacity: setFillOpacity(props.neighborhoodData[props.neighborhoodKey]),
-    weight: 3
+    weight: 1
   }
 
   const onEachNeighborhood = (neighborhood, layer) => {
@@ -40,6 +40,11 @@ export default React.memo(function NeighborhoodLayer(props) {
     })
   }
 
+  const stepColor = (step) => {
+    const s = props.steps.find( x => x.id === step.id)
+    return s.userStep ? "red" : "green"
+  }
+
   return(
     <>
       <LayersControl.Overlay checked={props.neighborhoodData[props.neighborhoodKey].show || props.neighborhoodData[props.neighborhoodKey].preview} name={props.neighborhood.properties.hood} key={props.neighborhood.properties.objectid} >
@@ -52,21 +57,27 @@ export default React.memo(function NeighborhoodLayer(props) {
               props.neighborhood.steps.map( step => {
                 const geoJSON = step.geometry;
 
-                return(
-                  <>
-                    <GeoJSON key={step.id} data={geoJSON} pathOptions={{ color: "green", weight: 4}}>
-                      <Popup>
-                        <Typography variant='subtitle2'>
-                          {step.properties.name}
-                        </Typography>
-                        <Divider />
-                        <Typography variant='body2' style={{ margin: 3 }}>
-                          Steps: {step.properties.number_of_steps || "Unkown"} 
-                        </Typography>
-                      </Popup>
-                    </GeoJSON>
-                  </>
-                )
+                const s = props.steps.find( x => x.id == step.id)
+
+                if (s.show) {
+                  return(
+                    <>
+                      <GeoJSON key={step.id} data={geoJSON} pathOptions={{ color: `${stepColor(step)}`, weight: 4}}>
+                        <Popup>
+                          <Typography variant='subtitle2'>
+                            {step.properties.name}
+                          </Typography>
+                          <Divider />
+                          <Typography variant='body2' style={{ margin: 3 }}>
+                            Steps: {step.properties.number_of_steps || "Unkown"} 
+                          </Typography>
+                        </Popup>
+                      </GeoJSON>
+                    </>
+                  )
+                } else {
+                  return 
+                }
               })
             }
           </GeoJSON>

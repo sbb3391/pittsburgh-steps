@@ -13,7 +13,6 @@ function App() {
 
   const [screen, changeScreen] = useState()
   
- 
   useEffect( () => {
     if (window.localStorage.stepsToken) {
       changeScreen("myMap")

@@ -26,7 +26,7 @@ export default function Login(props) {
     .then( json => {
       if (json.token) {
         window.localStorage.stepsToken = json.token
-        window.localStorage.user = json.user
+        window.localStorage.user = JSON.stringify(json.user)
         props.changeScreen("myMap")
       }
     })
